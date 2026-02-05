@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ScheduleBlockType {
+  CLASS
+  BREAK
+  GAP
+}
+
+enum PunchType {
+  IN
+  OUT
+}
+
+enum PunchSource {
+  DEVICE
+  MANUAL
+  IMPORT
+}
+
+enum IncidentType {
+  LATE_ARRIVAL
+  EARLY_LEAVE
+  MISSING_IN
+  MISSING_OUT
+  OUT_WITHOUT_IN
+  IN_WITHOUT_OUT
+  ABSENT_DURING_REQUIRED_BLOCK
+}
+
+enum ExceptionType {
+  ABSENCE
+  PERMISSION
+  HOLIDAY
+  SPECIAL_SCHEDULE
+}
+
+model Employee {
+  id             BigInt  @id @default(autoincrement())
+  firstName      String
+  lastName       String
+  identification String  @unique
+  email          String  @unique
+  isActive       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scheduleAssignments EmployeeScheduleAssignment[]
+  punches             AttendancePunch[]
+  exceptions          ScheduleException[]
+  incidents           AttendanceIncident[]
+
+  @@index([identification])
+}
+
+model ScheduleTemplate {
+  id        BigInt @id @default(autoincrement())
+  name      String
+  validFrom DateTime @db.Date
+  validTo   DateTime? @db.Date
+  createdAt DateTime @default(now())
+
+  blocks      ScheduleBlock[]
+  assignments EmployeeScheduleAssignment[]
+
+  @@index([validFrom, validTo])
+}
+
+model EmployeeScheduleAssignment {
+  id                 BigInt @id @default(autoincrement())
+  employeeId         BigInt
+  scheduleTemplateId BigInt
+  startsOn           DateTime @db.Date
+  endsOn             DateTime? @db.Date
+  createdAt          DateTime @default(now())
+
+  employee         Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  scheduleTemplate ScheduleTemplate @relation(fields: [scheduleTemplateId], references: [id], onDelete: Restrict)
+
+  @@index([employeeId, startsOn, endsOn])
+  @@index([scheduleTemplateId])
+}
+
+model ScheduleBlock {
+  id                 BigInt @id @default(autoincrement())
+  scheduleTemplateId BigInt
+
+  /// 1=Monday ... 7=Sunday
+  weekday          Int
+  startTime        DateTime @db.Time(0)
+  endTime          DateTime @db.Time(0)
+  blockType        ScheduleBlockType
+  label            String?
+  requiresPresence Boolean
+
+  createdAt DateTime @default(now())
+
+  scheduleTemplate ScheduleTemplate @relation(fields: [scheduleTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleTemplateId, weekday, startTime])
+}
+
+model AttendancePunch {
+  id         BigInt @id @default(autoincrement())
+  employeeId BigInt
+  punchedAt  DateTime @db.Timestamptz(6)
+  type       PunchType
+  source     PunchSource @default(IMPORT)
+  notes      String?
+  rawPayload Json?
+
+  createdAt DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, punchedAt])
+  @@index([punchedAt])
+
+  /// avoid duplicates in the excel imports
+  @@unique([employeeId, punchedAt, type])
+}
+
+model AttendanceRule {
+  /// Singleton pattern
+  id                        Int @id @default(1)
+  lateGraceMinutes          Int @default(5)
+  earlyLeaveGraceMinutes    Int @default(5)
+  minGapMinutesToAllowCheckout Int @default(20)
+
+  updatedAt DateTime @updatedAt
+}
+
+model ScheduleException {
+  id         BigInt @id @default(autoincrement())
+  employeeId BigInt
+  date       DateTime @db.Date
+  type       ExceptionType
+  startTime  DateTime? @db.Time(0)
+  endTime    DateTime? @db.Time(0)
+  reason     String?
+
+  createdAt DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, date])
+}
+
+model AttendanceIncident {
+  id         BigInt @id @default(autoincrement())
+  employeeId BigInt
+  date       DateTime @db.Date
+  incident   IncidentType
+
+  /// allow multiple expected time ranges for certain incident types
+  expectedStart DateTime? @db.Time(0)
+  expectedEnd   DateTime? @db.Time(0)
+
+  actualTime DateTime? @db.Timestamptz(6)
+  details    Json?
+
+  createdAt DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId, date])
+  @@unique([employeeId, date, incident, expectedStart, expectedEnd])
+}
