@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { pool } from "./db";
+import { uploadPunchesMiddleware, importPunchesFromExcel } from "./routes/importPunches";
+
 
 
 const app = express();
@@ -20,6 +22,8 @@ app.get("/api/db-health", async (_req, res) => {
     res.status(500).json({ ok: false, error: err?.message ?? "DB error" });
   }
 });
+
+app.post("/api/imports/punches", uploadPunchesMiddleware, importPunchesFromExcel);
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
