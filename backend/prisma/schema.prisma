@@ -41,6 +41,13 @@ enum ExceptionType {
   SPECIAL_SCHEDULE
 }
 
+enum ImportStatus {
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+
 model Employee {
   id             BigInt  @id @default(autoincrement())
   firstName      String
@@ -108,22 +115,26 @@ model ScheduleBlock {
 }
 
 model AttendancePunch {
-  id         BigInt @id @default(autoincrement())
-  employeeId BigInt
-  punchedAt  DateTime @db.Timestamptz(6)
-  type       PunchType
-  source     PunchSource @default(IMPORT)
-  notes      String?
-  rawPayload Json?
+  id            BigInt @id @default(autoincrement())
+  employeeId    BigInt
+  punchedAt     DateTime @db.Timestamptz(6)
+  type          PunchType
+  source        PunchSource @default(IMPORT)
+  notes         String?
+  rawPayload    Json?
+  importBatchId BigInt?
+  importRow     Int?
 
   createdAt DateTime @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
+  importBatch AttendanceImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
   @@index([employeeId, punchedAt])
   @@index([punchedAt])
+  @@index([importBatchId])
 
-  /// avoid duplicates in the excel imports
   @@unique([employeeId, punchedAt, type])
 }
 
@@ -172,4 +183,24 @@ model AttendanceIncident {
 
   @@index([employeeId, date])
   @@unique([employeeId, date, incident, expectedStart, expectedEnd])
+}
+
+model AttendanceImportBatch {
+  id              BigInt       @id @default(autoincrement())
+  filename        String
+  fileChecksum    String?      @unique// opcional (sha256) para dedupe por archivo
+  status          ImportStatus @default(PROCESSING)
+
+  totalRows       Int          @default(0)
+  inserted        Int          @default(0)
+  rejected        Int          @default(0)
+  rejectedDetails Json?        // ejemplo: [{rowNumber: 12, reason: "..."}]
+
+  createdAt       DateTime     @default(now())
+
+  punches         AttendancePunch[]
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([fileChecksum])
 }
