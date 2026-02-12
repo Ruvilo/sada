@@ -204,3 +204,21 @@ model AttendanceImportBatch {
   @@index([status])
   @@index([fileChecksum])
 }
+model EmployeeImportBatch {
+  id              BigInt       @id @default(autoincrement())
+  filename        String
+  fileChecksum    String?      @unique
+  status          ImportStatus @default(PROCESSING)
+
+  totalRows       Int          @default(0)
+  inserted        Int          @default(0)
+  updated         Int          @default(0)
+  rejected        Int          @default(0)
+  rejectedDetails Json?
+
+  createdAt       DateTime     @default(now())
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([fileChecksum])
+}
