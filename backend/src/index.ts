@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import { pool } from "./db";
 import { uploadPunchesMiddleware, importPunchesFromExcel } from "./routes/importPunches";
-
+import { uploadEmployeesMiddleware, importEmployeesFromExcel } from "./routes/importEmployees";
+import { listEmployeeImportBatches, getEmployeeImportBatchById, } from "./routes/importEmployeesHistory";
+import { listPunchesImportBatches, getPunchesImportBatchById } from "./routes/importPunchesHistory";
 
 
 const app = express();
@@ -24,6 +26,12 @@ app.get("/api/db-health", async (_req, res) => {
 });
 
 app.post("/api/imports/punches", uploadPunchesMiddleware, importPunchesFromExcel);
+app.post("/api/imports/employees", uploadEmployeesMiddleware, importEmployeesFromExcel);
+app.get("/api/imports/employees", listEmployeeImportBatches);
+app.get("/api/imports/employees/:batchId", getEmployeeImportBatchById);
+app.get("/api/imports/punches", listPunchesImportBatches);
+app.get("/api/imports/punches/:batchId", getPunchesImportBatchById);
+
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
