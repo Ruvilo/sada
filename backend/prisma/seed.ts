@@ -1,6 +1,6 @@
-import { PrismaClient, ScheduleBlockType } from "@prisma/client";
+import { ScheduleBlockType } from "@prisma/client";
+import { prisma } from "../src/prisma";
 
-const prisma = new PrismaClient();
 
 function timeToDate(time: string) {
   // "HH:MM" -> Date ISO válido para campos @db.Time
@@ -81,10 +81,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
+  .then(() => console.log("✅ Seeding completed."))
+  .catch((e) => console.error("❌ Seeding failed:", e))
   .finally(async () => {
     await prisma.$disconnect();
   });
