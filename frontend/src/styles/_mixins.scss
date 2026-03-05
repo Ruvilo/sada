@@ -1,0 +1,17 @@
+@use "./tokens" as *;
+
+@mixin card {
+  background: $clr-surface-tonal-a0;
+  border: 1px solid rgba($clr-light-a0, 0.08);
+  border-radius: 16px;
+}
+
+@mixin focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba($clr-primary-a0, 0.35);
+  border-color: rgba($clr-primary-a0, 0.6);
+}
+
+@mixin text-muted {
+  color: rgba($clr-light-a0, 0.7);
+}

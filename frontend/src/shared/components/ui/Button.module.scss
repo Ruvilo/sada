@@ -1,0 +1,34 @@
+@use "@/styles/tokens" as *;
+@use "@/styles/mixins" as *;
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba($clr-light-a0, 0.10);
+  cursor: pointer;
+  color: rgba($clr-light-a0, 0.90);
+  font-weight: 600;
+
+  &:focus-visible { @include focus-ring; }
+}
+
+.soft {
+  background: rgba($clr-light-a0, 0.06);
+
+  &:hover { background: rgba($clr-light-a0, 0.09); }
+}
+
+.ghost {
+  background: transparent;
+
+  &:hover { background: rgba($clr-light-a0, 0.06); }
+}
+
+.leftIcon {
+  display: grid;
+  place-items: center;
+  opacity: 0.9;
+}

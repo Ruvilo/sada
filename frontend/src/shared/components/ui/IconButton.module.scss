@@ -1,0 +1,16 @@
+@use "@/styles/tokens" as *;
+@use "@/styles/mixins" as *;
+
+.iconBtn {
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba($clr-light-a0, 0.10);
+  background: rgba($clr-light-a0, 0.03);
+  color: rgba($clr-light-a0, 0.85);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+
+  &:hover { background: rgba($clr-light-a0, 0.07); }
+  &:focus-visible { @include focus-ring; }
+}
